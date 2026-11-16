@@ -1,0 +1,11 @@
+[16-Nov-26 02:19:12 - INFO] - anony: Cache directories updated.
+[16-Nov-26 02:19:12 - INFO] - anony: Loaded languages: my, zh, fr, pt, en, ar, es, de, ja, ru, tr, pa, hi
+[16-Nov-26 02:19:19 - INFO] - anony: Database connection successful. (0.37s)
+[16-Nov-26 02:19:20 - INFO] - anony: Database cache loaded.
+[16-Nov-26 02:19:21 - INFO] - anony: Bot started as @nexus_all_in_one_bot
+[16-Nov-26 02:19:22 - INFO] - anony: Assistant 1 started as @Wavyxmusic
+[16-Nov-26 02:19:22 - INFO] - anony: PyTgCalls client(s) started.
+/home/codespace/.python/current/lib/python3.14/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+  warnings.warn(
+[16-Nov-26 02:19:28 - INFO] - anony: Loaded 29 modules.
+[16-Nov-26 02:19:28 - INFO] - anony: Loaded 1 sudo users.

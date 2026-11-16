@@ -1,0 +1,203 @@
+import os, json, asyncio, urllib.request
+from pyrogram import filters
+from pyrogram.types import CallbackQuery, Message
+from anony import app, config
+
+PHOTO_URL = getattr(config, "START_IMG_URL", None) or "https://telegra.ph/file/256904970492341578962.jpg"
+
+TEXTS = {
+    "en": {
+        "main": (
+            "✨ <b>WAVY — ALL-IN-ONE FEATURES</b> ✨\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Select any option below to explore the available tools and commands 👇\n\n"
+            "💬 Need Help? <a href=\"https://t.me/Anubhavxt\">Support (@Anubhavxt)</a>"
+        ),
+        "lang_btn": "🌐 Language: English",
+        "back": "🔙 Back to Features",
+        "info": {
+            "wavy_conv": "🔄 <b>All-in-One File Converter</b>\n━━━━━━━━━━━━━━━━━━━━━━\nSend any <b>Photo, Video, Audio, PDF, or Word (.docx)</b> directly (or reply with <code>/convert to pdf</code>) to convert instantly!",
+            "wavy_sub": "🎬 <b>AI Video Subtitles</b>\n━━━━━━━━━━━━━━━━━━━━━━\nReply to any video with <code>/sub</code> to automatically generate and burn stylish subtitles.",
+            "wavy_dl": "📥 <b>Video Downloader</b>\n━━━━━━━━━━━━━━━━━━━━━━\nSend any YouTube or Instagram link directly (or use <code>/dl &lt;link&gt;</code>) to download in HD.",
+            "wavy_mp3": "🎵 <b>Video to MP3</b>\n━━━━━━━━━━━━━━━━━━━━━━\nReply to any video with <code>/mp3</code> to extract high-quality MP3 audio instantly.",
+            "wavy_lyrics": "📝 <b>Song Lyrics</b>\n━━━━━━━━━━━━━━━━━━━━━━\nSend <code>/lyrics &lt;song name&gt;</code> to fetch complete lyrics for any track.",
+            "wavy_sticker": "🖼 <b>Sticker & Photo</b>\n━━━━━━━━━━━━━━━━━━━━━━\nReply to a photo with <code>/sticker</code> to make a sticker, or reply to a sticker with <code>/photo</code> to convert back.",
+            "wavy_qr": "🔳 <b>QR Code Maker</b>\n━━━━━━━━━━━━━━━━━━━━━━\nSend <code>/qr &lt;text or URL&gt;</code> to generate a high-resolution QR code.",
+            "wavy_vc": "🎧 <b>VC Music Player</b>\n━━━━━━━━━━━━━━━━━━━━━━\n• <code>/play &lt;song&gt;</code> — Stream audio in Group Voice Chat\n• <code>/vplay &lt;video&gt;</code> — Stream HD video in Group Voice Chat\n• <code>/pause</code>, <code>/resume</code>, <code>/skip</code>, <code>/stop</code>",
+            "wavy_guide": "📖 <b>How to Use (Step-by-Step Guide)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n1️⃣ Add this bot to your group and grant <b>Admin</b> privileges.\n2️⃣ Start a Voice Chat (VC) in the group.\n3️⃣ Use <code>/play</code> or <code>/vplay</code> followed by a song name to begin."
+        }
+    },
+    "hi": {
+        "main": (
+            "✨ <b>WAVY — ALL-IN-ONE FEATURES</b> ✨\n"
+            "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Neeche diye gaye kisi bhi button par tap karein aur dekhein bot kya-kya kar sakta hai 👇\n\n"
+            "💬 Need Help? <a href=\"https://t.me/Anubhavxt\">Support (@Anubhavxt)</a>"
+        ),
+        "lang_btn": "🌐 Language: Hinglish / हिंदी",
+        "back": "🔙 Back to Features",
+        "info": {
+            "wavy_conv": "🔄 <b>All-in-One File Converter</b>\n━━━━━━━━━━━━━━━━━━━━━━\nKoi bhi <b>Photo, Video, Audio, PDF, ya Word (.docx)</b> direct bhejein (ya <code>/convert to pdf</code> reply karein) — turant convert hoga!",
+            "wavy_sub": "🎬 <b>AI Video Subtitles</b>\n━━━━━━━━━━━━━━━━━━━━━━\nKisi bhi video par reply karke <code>/sub</code> likhein — bot automatic stylish subtitles burn karke bhej dega.",
+            "wavy_dl": "📥 <b>Video Downloader</b>\n━━━━━━━━━━━━━━━━━━━━━━\nDirect YouTube ya Instagram link bhejein (ya <code>/dl &lt;link&gt;</code>) — turant HD video milegi.",
+            "wavy_mp3": "🎵 <b>Video to MP3</b>\n━━━━━━━━━━━━━━━━━━━━━━\nVideo par reply karke <code>/mp3</code> likhein — high-quality MP3 audio turant mil jayegi.",
+            "wavy_lyrics": "📝 <b>Song Lyrics</b>\n━━━━━━━━━━━━━━━━━━━━━━\n<code>/lyrics &lt;gaane ka naam&gt;</code> likhein aur poore lyrics paayein.",
+            "wavy_sticker": "🖼 <b>Sticker & Photo</b>\n━━━━━━━━━━━━━━━━━━━━━━\nPhoto par <code>/sticker</code> ya sticker par <code>/photo</code> reply karein.",
+            "wavy_qr": "🔳 <b>QR Code Maker</b>\n━━━━━━━━━━━━━━━━━━━━━━\n<code>/qr &lt;text ya link&gt;</code> likhein aur HD QR code paayein.",
+            "wavy_vc": "🎧 <b>VC Music Player</b>\n━━━━━━━━━━━━━━━━━━━━━━\n• <code>/play &lt;song&gt;</code> — Group VC mein audio\n• <code>/vplay &lt;video&gt;</code> — Group VC mein video\n• <code>/pause</code>, <code>/resume</code>, <code>/skip</code>, <code>/stop</code>",
+            "wavy_guide": "📖 <b>How to Use (Step-by-Step Guide)</b>\n━━━━━━━━━━━━━━━━━━━━━━\n1️⃣ Bot ko group mein add karke <b>Admin</b> banayein.\n2️⃣ Group Voice Chat (VC) start karein.\n3️⃣ <code>/play</code> ya <code>/vplay</code> likh kar music/video enjoy karein."
+        }
+    },
+    "es": {
+        "main": "✨ <b>WAVY — ALL-IN-ONE FEATURES</b> ✨\n━━━━━━━━━━━━━━━━━━━━━━\n\nSeleccione cualquier opción 👇\n\n💬 ¿Necesita ayuda? <a href=\"https://t.me/Anubhavxt\">Soporte (@Anubhavxt)</a>",
+        "lang_btn": "🌐 Idioma: Español",
+        "back": "🔙 Volver",
+        "info": {
+            "wavy_conv": "🔄 <b>Convertidor de Archivos</b>\nEnvíe cualquier imagen, video, audio, PDF o Word directamente.",
+            "wavy_sub": "🎬 <b>Subtítulos IA</b>\nResponda a un video con <code>/sub</code>.",
+            "wavy_dl": "📥 <b>Descargador</b>\nEnvíe un enlace de YouTube o Instagram.",
+            "wavy_mp3": "🎵 <b>Video a MP3</b>\nResponda con <code>/mp3</code>.",
+            "wavy_lyrics": "📝 <b>Letras</b>\nEnvíe <code>/lyrics &lt;canción&gt;</code>.",
+            "wavy_sticker": "🖼 <b>Stickers</b>\nResponda con <code>/sticker</code> o <code>/photo</code>.",
+            "wavy_qr": "🔳 <b>QR</b>\nEnvíe <code>/qr &lt;texto&gt;</code>.",
+            "wavy_vc": "🎧 <b>Música VC</b>\nUse <code>/play</code> o <code>/vplay</code>.",
+            "wavy_guide": "📖 <b>Guía</b>\n1️⃣ Añada el bot como Admin.\n2️⃣ Inicie VC.\n3️⃣ Use <code>/play</code>."
+        }
+    },
+    "ar": {
+        "main": "✨ <b>WAVY — ALL-IN-ONE FEATURES</b> ✨\n━━━━━━━━━━━━━━━━━━━━━━\n\nاختر أي زر أدناه 👇\n\n💬 الدعم الفني: <a href=\"https://t.me/Anubhavxt\">@Anubhavxt</a>",
+        "lang_btn": "🌐 اللغة: العربية",
+        "back": "🔙 رجوع",
+        "info": {
+            "wavy_conv": "🔄 <b>محول الملفات</b>\nأرسل أي صورة أو فيديو أو PDF لتحويله فورا.",
+            "wavy_sub": "🎬 <b>ترجمة الفيديو</b>\nرد بـ <code>/sub</code>.",
+            "wavy_dl": "📥 <b>تحميل الفيديو</b>\nأرسل رابط يوتيوب أو إنستغرام.",
+            "wavy_mp3": "🎵 <b>تحويل إلى MP3</b>\nرد بـ <code>/mp3</code>.",
+            "wavy_lyrics": "📝 <b>كلمات الأغاني</b>\nأرسل <code>/lyrics</code>.",
+            "wavy_sticker": "🖼 <b>ملصقات</b>\nرد بـ <code>/sticker</code>.",
+            "wavy_qr": "🔳 <b>صانع QR</b>\nأرسل <code>/qr</code>.",
+            "wavy_vc": "🎧 <b>مشغل الموسيقى</b>\nاستخدم <code>/play</code>.",
+            "wavy_guide": "📖 <b>الاستخدام</b>\n1️⃣ أضف البوت كمشرف.\n2️⃣ ابدأ المحادثة الصوتية."
+        }
+    },
+    "ru": {
+        "main": "✨ <b>WAVY — ALL-IN-ONE FEATURES</b> ✨\n━━━━━━━━━━━━━━━━━━━━━━\n\nВыберите любую кнопку ниже 👇\n\n💬 Поддержка: <a href=\"https://t.me/Anubhavxt\">@Anubhavxt</a>",
+        "lang_btn": "🌐 Язык: Русский",
+        "back": "🔙 Назад",
+        "info": {
+            "wavy_conv": "🔄 <b>Конвертер файлов</b>\nОтправьте фото, видео, аудио, PDF или Word.",
+            "wavy_sub": "🎬 <b>ИИ Субтитры</b>\nОтветьте <code>/sub</code>.",
+            "wavy_dl": "📥 <b>Загрузчик</b>\nОтправьте ссылку YouTube или Instagram.",
+            "wavy_mp3": "🎵 <b>Видео в MP3</b>\nОтветьте <code>/mp3</code>.",
+            "wavy_lyrics": "📝 <b>Текст песни</b>\nОтправьте <code>/lyrics</code>.",
+            "wavy_sticker": "🖼 <b>Стикеры</b>\nОтветьте <code>/sticker</code>.",
+            "wavy_qr": "🔳 <b>QR-код</b>\nОтправьте <code>/qr</code>.",
+            "wavy_vc": "🎧 <b>Музыка в ГЧ</b>\nИспользуйте <code>/play</code>.",
+            "wavy_guide": "📖 <b>Инструкция</b>\n1️⃣ Добавьте бота как админа.\n2️⃣ Начните голосовой чат."
+        }
+    }
+}
+
+USER_LANG = {}
+
+def main_kb_json(lang="en"):
+    t = TEXTS.get(lang, TEXTS["en"])
+    return {
+        "inline_keyboard": [
+            [{"text": t["lang_btn"], "callback_data": "wavy_lang_menu", "style": "success"}],
+            [{"text": "🔄 All-in-One File Converter", "callback_data": "wavy_conv", "style": "primary"}],
+            [{"text": "🎬 AI Video Subtitles (Top)", "callback_data": "wavy_sub", "style": "primary"}],
+            [
+                {"text": "📥 Video Downloader", "callback_data": "wavy_dl", "style": "primary"},
+                {"text": "🎵 Video to MP3", "callback_data": "wavy_mp3", "style": "primary"}
+            ],
+            [
+                {"text": "📝 Song Lyrics", "callback_data": "wavy_lyrics", "style": "primary"},
+                {"text": "🖼 Sticker & Photo", "callback_data": "wavy_sticker", "style": "primary"}
+            ],
+            [
+                {"text": "🔳 QR Code Maker", "callback_data": "wavy_qr", "style": "primary"},
+                {"text": "🎧 VC Music Player", "callback_data": "wavy_vc", "style": "primary"}
+            ],
+            [{"text": "📖 How to Use (Step-by-Step Guide)", "callback_data": "wavy_guide", "style": "success"}]
+        ]
+    }
+
+LANG_KB_JSON = {
+    "inline_keyboard": [
+        [
+            {"text": "🇬🇧 English", "callback_data": "setlang_en", "style": "primary"},
+            {"text": "🇮🇳 Hinglish / हिंदी", "callback_data": "setlang_hi", "style": "primary"}
+        ],
+        [
+            {"text": "🇪🇸 Español", "callback_data": "setlang_es", "style": "primary"},
+            {"text": "🇸🇦 العربية", "callback_data": "setlang_ar", "style": "primary"}
+        ],
+        [{"text": "🇷🇺 Русский", "callback_data": "setlang_ru", "style": "primary"}],
+        [{"text": "🔙 Back", "callback_data": "feat_menu", "style": "success"}]
+    ]
+}
+
+def _tg_api(method, payload):
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{config.BOT_TOKEN}/{method}",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"}
+    )
+    urllib.request.urlopen(req, timeout=10).read()
+
+@app.on_message(filters.command(["start", "features", "help"]) & filters.private, group=-25)
+async def show_features(_, m: Message):
+    lang = USER_LANG.get(m.from_user.id, "en") if m.from_user else "en"
+    await asyncio.to_thread(_tg_api, "sendPhoto", {
+        "chat_id": m.chat.id,
+        "photo": PHOTO_URL,
+        "caption": TEXTS[lang]["main"],
+        "parse_mode": "HTML",
+        "reply_markup": main_kb_json(lang)
+    })
+    m.stop_propagation()
+
+@app.on_callback_query(filters.regex(r"^(feat_menu|wavy_|setlang_)"), group=-25)
+async def cb_wavy(_, cq: CallbackQuery):
+    await cq.answer()
+    uid = cq.from_user.id
+    lang = USER_LANG.get(uid, "en")
+    data = cq.data
+    base = {"chat_id": cq.message.chat.id, "message_id": cq.message.id, "parse_mode": "HTML"}
+
+    if data == "wavy_lang_menu":
+        base.update({"caption": "🌐 <b>Select Your Preferred Language:</b>", "reply_markup": LANG_KB_JSON})
+    elif data.startswith("setlang_"):
+        new_lang = data.split("_")[1]
+        USER_LANG[uid] = new_lang
+        base.update({"caption": TEXTS[new_lang]["main"], "reply_markup": main_kb_json(new_lang)})
+    elif data == "feat_menu":
+        base.update({"caption": TEXTS[lang]["main"], "reply_markup": main_kb_json(lang)})
+    elif data in TEXTS[lang]["info"]:
+        back_kb = {"inline_keyboard": [[{"text": TEXTS[lang]["back"], "callback_data": "feat_menu", "style": "success"}]]}
+        base.update({"caption": TEXTS[lang]["info"][data], "reply_markup": back_kb})
+
+    try:
+        await asyncio.to_thread(_tg_api, "editMessageCaption", base)
+    except Exception:
+        base["text"] = base.pop("caption")
+        await asyncio.to_thread(_tg_api, "editMessageText", base)
+    cq.stop_propagation()
+
+@app.on_message(filters.private & filters.regex(r"^https?://(www\.)?(youtube\.com|youtu\.be|instagram\.com)/"), group=-25)
+async def auto_dl(_, m: Message):
+    url = m.text.strip().split()[0]
+    st = await m.reply_text("⏳ <b>Downloading HD Video...</b>")
+    out = f"/tmp/dl_{m.id}.mp4"
+    try:
+        p = await asyncio.create_subprocess_exec("yt-dlp", "-f", "best[ext=mp4][height<=720]/best", "-o", out, "--no-playlist", url)
+        await p.communicate()
+        if os.path.exists(out):
+            await m.reply_video(out, caption="✅ <b>Downloaded via Wavy</b>")
+            await st.delete()
+        else:
+            await st.edit_text("❌ Download failed.")
+    finally:
+        if os.path.exists(out): os.remove(out)
+    m.stop_propagation()
